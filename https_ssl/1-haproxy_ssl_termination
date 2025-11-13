@@ -1,15 +1,12 @@
 # 1-haproxy_ssl_termination
-# SSL Termination + HTTP Redirect
+# SSL Termination + HTTP Redirect with static response
 
 global
-    log /dev/log local0
-    log /dev/log local1 notice
     daemon
     maxconn 2048
     tune.ssl.default-dh-param 2048
 
 defaults
-    log global
     mode http
     option httplog
     option dontlognull
@@ -22,11 +19,12 @@ frontend http_in
     bind *:80
     redirect scheme https code 301 if !{ ssl_fc }
 
-# Listen on port 443 and handle SSL
+# HTTPS frontend
 frontend https_in
     bind *:443 ssl crt /etc/ssl/private/haproxy.pem
     default_backend web_backend
 
+# Backend serves a static 200 page
 backend web_backend
-    balance roundrobin
-    server web1 127.0.0.1:80 check
+    # Return static 200 response for all requests
+    http-request return status 200 content-type "text/html" lf-file /etc/haproxy/static_page.html
