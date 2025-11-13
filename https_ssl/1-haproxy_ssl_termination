@@ -1,18 +1,22 @@
+# 1-haproxy_ssl_termination
+# HAProxy configuration for SSL termination and HTTP->HTTPS redirection
+
 global
     log /dev/log local0
     log /dev/log local1 notice
     daemon
-    maxconn 256
-    tune.ssl.default-dh-param 2048
+    maxconn 2048
+    ssl-default-bind-options no-sslv3
+    ssl-default-bind-ciphers HIGH:!aNULL:!MD5
 
 defaults
     log     global
     mode    http
     option  httplog
     option  dontlognull
-    timeout connect 5000ms
-    timeout client 50000ms
-    timeout server 50000ms
+    timeout connect 5000
+    timeout client  50000
+    timeout server  50000
     errorfile 400 /etc/haproxy/errors/400.http
     errorfile 403 /etc/haproxy/errors/403.http
     errorfile 408 /etc/haproxy/errors/408.http
@@ -21,13 +25,17 @@ defaults
     errorfile 503 /etc/haproxy/errors/503.http
     errorfile 504 /etc/haproxy/errors/504.http
 
+# Redirect all HTTP requests to HTTPS
+frontend http_in
+    bind *:80
+    redirect scheme https code 301 if !{ ssl_fc }
+
+# Accept HTTPS traffic and terminate SSL
 frontend https_in
     bind *:443 ssl crt /etc/ssl/private/haproxy.pem
-    mode http
     default_backend web_backend
 
 backend web_backend
-    mode http
     balance roundrobin
     option httpchk HEAD / HTTP/1.1\r\nHost:localhost
-    server web1 127.0.0.1:80 check
+    server web-01 127.0.0.1:80 check
