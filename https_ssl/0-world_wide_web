@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 0-world_wide_web
 # Display information about domain subdomains
 
