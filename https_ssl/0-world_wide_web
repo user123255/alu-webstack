@@ -1,0 +1,26 @@
+#!/bin/bash
+# 0-world_wide_web
+# Display information about domain subdomains
+
+domain=$1
+subdomain=$2
+
+# Function to query and display subdomain info
+get_subdomain_info() {
+    local sd=$1
+    local info
+    info=$(dig ${sd}.${domain} | awk '/ANSWER SECTION:/ {getline; print}')
+    record_type=$(echo "$info" | awk '{print $4}')
+    destination=$(echo "$info" | awk '{print $5}')
+    echo "The subdomain ${sd} is a ${record_type} record and points to ${destination}"
+}
+
+if [ -z "$subdomain" ]; then
+    # No subdomain provided, show all in order
+    for sd in www lb-01 web-01 web-02; do
+        get_subdomain_info $sd
+    done
+else
+    # Show info for the specified subdomain
+    get_subdomain_info $subdomain
+fi
