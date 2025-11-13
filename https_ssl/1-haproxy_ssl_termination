@@ -1,5 +1,5 @@
 # 1-haproxy_ssl_termination
-# SSL Termination + HTTP Redirect with static 200 response
+# SSL Termination + HTTP Redirect with backend HTTP server
 
 global
     daemon
@@ -24,6 +24,7 @@ frontend https_in
     bind *:443 ssl crt /etc/ssl/private/haproxy.pem
     default_backend web_backend
 
-# Backend serving inline static 200 response
+# Backend pointing to real HTTP server
 backend web_backend
-    http-request return status 200 content-type "text/html" string "Holberton School for the win!"
+    balance roundrobin
+    server web1 127.0.0.1:8080 check
