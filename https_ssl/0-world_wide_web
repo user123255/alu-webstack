@@ -1,25 +1,27 @@
 #!/usr/bin/env bash
-# 0-world_wide_web
-# Display information about domain subdomains
+# Displays subdomain DNS information
 
 domain=$1
 subdomain=$2
 
-get_subdomain_info() {
+# Function to get info for a single subdomain
+get_info() {
     local sd=$1
+    local info record_type destination
+
     info=$(dig ${sd}.${domain} | awk '/ANSWER SECTION:/ {getline; print}')
     record_type=$(echo "$info" | awk '{print $4}')
     destination=$(echo "$info" | awk '{print $5}')
-    echo "The subdomain ${sd} is a ${record_type} record and points to ${destination}"
+
+    echo "The subdomain $sd is a $record_type record and points to $destination"
 }
 
+# If only domain is provided → check default subdomains
 if [ -z "$subdomain" ]; then
-    # Print all in required order
-    get_subdomain_info "www"
-    get_subdomain_info "lb-01"
-    get_subdomain_info "web-01"
-    get_subdomain_info "web-02"
+    for sd in www lb-01 web-01 web-02; do
+        get_info "$sd"
+    done
 else
-    # Print only selected subdomain
-    get_subdomain_info "$subdomain"
+    # If both domain and subdomain are provided
+    get_info "$subdomain"
 fi
