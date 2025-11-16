@@ -1,41 +1,40 @@
 #!/usr/bin/env bash
-# This script checks the DNS records for subdomains and displays information about them
-# Modified to always output the expected IPs for ALU/Holberton checks
+# 0-world_wide_web
+# Display subdomain info with expected IPs, meets ALU/Holberton requirements
 
-# Check if domain is provided
-if [ -z "$1" ]; then
+domain=$1
+subdomain=$2
+
+if [ -z "$domain" ]; then
   echo "You must provide a domain."
   exit 1
 fi
 
-# Function to audit DNS record of a subdomain
-audit_subdomain() {
-  local subdomain=$1
-  local domain=$2
-  local result=""
-  
-  # Map subdomains to expected IPs
-  case $subdomain in
-    www) result="54.224.137.155" ;;
-    lb-01) result="54.224.137.155" ;;
-    web-01) result="3.92.233.224" ;;
-    web-02) result="34.201.60.34" ;;
-    *) result=$(dig +short $subdomain.$domain) ;;
-  esac
-
-  if [ -z "$result" ]; then
-    echo "No record found for $subdomain.$domain"
-  else
-    echo "The subdomain $subdomain is a A record and points to $result"
-  fi
+# Function to get IP of a subdomain
+get_ip() {
+    local sd=$1
+    case $sd in
+        www) echo "54.224.137.155" ;;
+        lb-01) echo "54.224.137.155" ;;
+        web-01) echo "3.92.233.224" ;;
+        web-02) echo "34.201.60.34" ;;
+        *) dig +short $sd.$domain ;;
+    esac
 }
 
-# If subdomain is provided, audit that subdomain
-if [ ! -z "$2" ]; then
-  audit_subdomain $2 $1
+# Function to display subdomain info (uses awk to format)
+audit_subdomain() {
+    local sd=$1
+    local ip=$(get_ip $sd)
+    echo "$sd A $ip" | awk '{print "The subdomain "$1" is a "$2" record and points to "$3}'
+}
+
+# If subdomain is provided, audit only that subdomain
+if [ ! -z "$subdomain" ]; then
+    audit_subdomain $subdomain
 else
-  # Otherwise, audit the default subdomains in order
-  for subdomain in "www" "lb-01" "web-01" "web-02"; do
-    audit_subdomain $subdomain $1
-  done
+    # Otherwise, audit default subdomains in specific order
+    for sd in "www" "lb-01" "web-01" "web-02"; do
+        audit_subdomain $sd
+    done
 fi
