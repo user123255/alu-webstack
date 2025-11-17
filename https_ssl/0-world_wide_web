@@ -1,40 +1,27 @@
 #!/usr/bin/env bash
-# 0-world_wide_web
-# Displays DNS information for subdomains
+# Displays information about subdomains
 
-domain="$1"
-subdomain="$2"
+domain=$1
+subdomain=$2
 
-# Function to fetch record type and destination using dig + awk
-check_record() {
-    local full="$1.$domain"
+# Function to query and display subdomain info
+get_subdomain_info() {
+    local sd=$1
+    local info
 
-    # Extract answer line
-    local line
-    line=$(dig "$full" | awk '/ANSWER SECTION/{getline; print}')
-
-    # If empty, treat as no record
-    if [ -z "$line" ]; then
-        echo "The subdomain $1 is a  record and points to "
-        return
+    info=$(dig +short "${sd}.${domain}")
+    if [ -z "$info" ]; then
+        echo "No record found for ${sd}.${domain}"
+    else
+        echo "${sd}.${domain} has IP: $info"
     fi
-
-    # Example line:
-    # www.domain.com.   87   IN   A   54.210.47.110
-    local type dest
-    type=$(echo "$line" | awk '{print $4}')
-    dest=$(echo "$line" | awk '{print $5}')
-
-    echo "The subdomain $1 is a $type record and points to $dest"
 }
 
-# If 2nd parameter exists → check only that subdomain
-if [ -n "$subdomain" ]; then
-    check_record "$subdomain"
-    exit 0
+# If no subdomain is provided, show all required ones
+if [ -z "$subdomain" ]; then
+    for sd in www lb-01 web-01 web-02; do
+        get_subdomain_info "$sd"
+    done
+else
+    get_subdomain_info "$subdomain"
 fi
-
-# Otherwise check all 4 required subdomains in order
-for s in www lb-01 web-01 web-02; do
-    check_record "$s"
-done
