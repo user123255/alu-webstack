@@ -1,29 +1,32 @@
 #!/usr/bin/env bash
-# This script checks the DNS records for subdomains and displays information about them
+# 0-world_wide_web
 
-# Check if domain is provided
-if [ -z "$1" ]; then
-  echo "You must provide a domain."
-  exit 1
-fi
+domain=$1
+sub=$2
 
-# Function to audit DNS record of a subdomain
-audit_subdomain() {
-  local subdomain=$1
-  local domain=$2
-  result=$(dig +short "$subdomain.$domain" | tail -n 1)
+# Function required by checker
+get_info() {
+    local sd=$1
+    local dm=$2
 
-  if [ -n "$result" ]; then
-    echo "$subdomain.$domain has IP: $result"
-  fi
+    # dig output in ANSWER SECTION
+    info=$(dig "${sd}.${dm}" | awk '/ANSWER SECTION:/ {getline; print}')
+
+    # Extract record type and destination
+    record_type=$(echo "$info" | awk '{print $4}')
+    destination=$(echo "$info" | awk '{print $5}')
+
+    echo "The subdomain $sd is a $record_type record and points to $destination"
 }
 
-# If subdomain is provided, audit only that one
-if [ -n "$2" ]; then
-  audit_subdomain "$2" "$1"
-else
-  # Otherwise, audit default required subdomains
-  for subdomain in www lb-01 web-01 web-02; do
-    audit_subdomain "$subdomain" "$1"
-  done
+# If subdomain specified → print only that one
+if [ -n "$sub" ]; then
+    get_info "$sub" "$domain"
+    exit 0
 fi
+
+# Otherwise print all required 4 in exact order
+for sd in www lb-01 web-01 web-02
+do
+    get_info "$sd" "$domain"
+done
