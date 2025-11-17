@@ -1,26 +1,29 @@
 #!/usr/bin/env bash
-# Display subdomain IP information
+# This script checks the DNS records for subdomains and displays information about them
 
-domain="$1"
-subdomain="$2"
-
-if [ -z "$domain" ]; then
-    exit 0
+# Check if domain is provided
+if [ -z "$1" ]; then
+  echo "You must provide a domain."
+  exit 1
 fi
 
-# Function to resolve a subdomain
-resolve() {
-    dig +short "$1.$domain" | tail -n 1
+# Function to audit DNS record of a subdomain
+audit_subdomain() {
+  local subdomain=$1
+  local domain=$2
+  result=$(dig +short "$subdomain.$domain" | tail -n 1)
+
+  if [ -n "$result" ]; then
+    echo "$subdomain.$domain has IP: $result"
+  fi
 }
 
-if [ -n "$subdomain" ]; then
-    ip=$(resolve "$subdomain")
-    [ -n "$ip" ] && echo "$subdomain.$domain has IP: $ip"
-    exit 0
+# If subdomain is provided, audit only that one
+if [ -n "$2" ]; then
+  audit_subdomain "$2" "$1"
+else
+  # Otherwise, audit default required subdomains
+  for subdomain in www lb-01 web-01 web-02; do
+    audit_subdomain "$subdomain" "$1"
+  done
 fi
-
-# No subdomain provided → print all 4 required ones
-for host in "www" "lb-01" "web-01" "web-02"; do
-    ip=$(resolve "$host")
-    [ -n "$ip" ] && echo "$host.$domain has IP: $ip"
-done
