@@ -1,27 +1,26 @@
 #!/usr/bin/env bash
-# Displays information about subdomains
+# Display subdomain IP information
 
-domain=$1
-subdomain=$2
+domain="$1"
+subdomain="$2"
 
-# Function to query and display subdomain info
-get_subdomain_info() {
-    local sd=$1
-    local info
+if [ -z "$domain" ]; then
+    exit 0
+fi
 
-    info=$(dig +short "${sd}.${domain}")
-    if [ -z "$info" ]; then
-        echo "No record found for ${sd}.${domain}"
-    else
-        echo "${sd}.${domain} has IP: $info"
-    fi
+# Function to resolve a subdomain
+resolve() {
+    dig +short "$1.$domain" | tail -n 1
 }
 
-# If no subdomain is provided, show all required ones
-if [ -z "$subdomain" ]; then
-    for sd in www lb-01 web-01 web-02; do
-        get_subdomain_info "$sd"
-    done
-else
-    get_subdomain_info "$subdomain"
+if [ -n "$subdomain" ]; then
+    ip=$(resolve "$subdomain")
+    [ -n "$ip" ] && echo "$subdomain.$domain has IP: $ip"
+    exit 0
 fi
+
+# No subdomain provided → print all 4 required ones
+for host in "www" "lb-01" "web-01" "web-02"; do
+    ip=$(resolve "$host")
+    [ -n "$ip" ] && echo "$host.$domain has IP: $ip"
+done
