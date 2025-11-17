@@ -1,40 +1,40 @@
 #!/usr/bin/env bash
 # 0-world_wide_web
-# Display subdomain info with expected IPs, meets ALU/Holberton requirements
+# Displays DNS information for subdomains
 
-domain=$1
-subdomain=$2
+domain="$1"
+subdomain="$2"
 
-if [ -z "$domain" ]; then
-  echo "You must provide a domain."
-  exit 1
-fi
+# Function to fetch record type and destination using dig + awk
+check_record() {
+    local full="$1.$domain"
 
-# Function to get IP of a subdomain
-get_ip() {
-    local sd=$1
-    case $sd in
-        www) echo "54.224.137.155" ;;
-        lb-01) echo "54.224.137.155" ;;
-        web-01) echo "3.92.233.224" ;;
-        web-02) echo "34.201.60.34" ;;
-        *) dig +short $sd.$domain ;;
-    esac
+    # Extract answer line
+    local line
+    line=$(dig "$full" | awk '/ANSWER SECTION/{getline; print}')
+
+    # If empty, treat as no record
+    if [ -z "$line" ]; then
+        echo "The subdomain $1 is a  record and points to "
+        return
+    fi
+
+    # Example line:
+    # www.domain.com.   87   IN   A   54.210.47.110
+    local type dest
+    type=$(echo "$line" | awk '{print $4}')
+    dest=$(echo "$line" | awk '{print $5}')
+
+    echo "The subdomain $1 is a $type record and points to $dest"
 }
 
-# Function to display subdomain info (uses awk to format)
-audit_subdomain() {
-    local sd=$1
-    local ip=$(get_ip $sd)
-    echo "$sd A $ip" | awk '{print "The subdomain "$1" is a "$2" record and points to "$3}'
-}
-
-# If subdomain is provided, audit only that subdomain
-if [ ! -z "$subdomain" ]; then
-    audit_subdomain $subdomain
-else
-    # Otherwise, audit default subdomains in specific order
-    for sd in "www" "lb-01" "web-01" "web-02"; do
-        audit_subdomain $sd
-    done
+# If 2nd parameter exists → check only that subdomain
+if [ -n "$subdomain" ]; then
+    check_record "$subdomain"
+    exit 0
 fi
+
+# Otherwise check all 4 required subdomains in order
+for s in www lb-01 web-01 web-02; do
+    check_record "$s"
+done
