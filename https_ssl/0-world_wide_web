@@ -1,32 +1,26 @@
 #!/usr/bin/env bash
 # 0-world_wide_web
+# Display subdomain information
 
 domain=$1
-sub=$2
+subdomain=$2
 
-# Function required by checker
-get_info() {
+# Function to get subdomain info
+get_subdomain_info() {
     local sd=$1
-    local dm=$2
-
-    # dig output in ANSWER SECTION
-    info=$(dig "${sd}.${dm}" | awk '/ANSWER SECTION:/ {getline; print}')
-
-    # Extract record type and destination
-    record_type=$(echo "$info" | awk '{print $4}')
-    destination=$(echo "$info" | awk '{print $5}')
-
-    echo "The subdomain $sd is a $record_type record and points to $destination"
+    local d=$2
+    local info
+    info=$(dig ${sd}.${d} | awk '/ANSWER SECTION:/ {getline; print}')
+    local record_type=$(echo "$info" | awk '{print $4}')
+    local destination=$(echo "$info" | awk '{print $5}')
+    echo "The subdomain ${sd} is a ${record_type} record and points to ${destination}"
 }
 
-# If subdomain specified → print only that one
-if [ -n "$sub" ]; then
-    get_info "$sub" "$domain"
-    exit 0
+if [ -z "$subdomain" ]; then
+    # Audit default subdomains in order
+    for sd in www lb-01 web-01 web-02; do
+        get_subdomain_info $sd $domain
+    done
+else
+    get_subdomain_info $subdomain $domain
 fi
-
-# Otherwise print all required 4 in exact order
-for sd in www lb-01 web-01 web-02
-do
-    get_info "$sd" "$domain"
-done
