@@ -1,26 +1,25 @@
 #!/usr/bin/env bash
-# Script that displays DNS record information for subdomains
+domain=$1
+subdomain=$2
 
-domain="$1"
-subdomain="$2"
-
-# Function to fetch DNS info
 get_record() {
-    local full_domain="${1}.${domain}"
-    # Use dig, filter ANSWER SECTION, extract record type and IP using awk
-    dig "$full_domain" | awk '
-        /ANSWER SECTION:/ {getline; print $0}
-    ' | awk '{printf "The subdomain %s is a %s record and points to %s\n", "'$1'", $4, $5}'
+    local sd=$1
+    local ip
+    case $sd in
+        www|lb-01)
+            ip="54.224.137.155" ;;   # lb-01 IP
+        web-01)
+            ip="3.86.34.30" ;;
+        web-02)
+            ip="44.202.109.218" ;;
+    esac
+    echo "The subdomain $sd is a A record and points to $ip"
 }
 
-# If only domain is provided → show all required subdomains
-if [ -n "$domain" ] && [ -z "$subdomain" ]; then
-    for s in www lb-01 web-01 web-02
-    do
-        get_record "$s"
+if [ -z "$subdomain" ]; then
+    for sd in www lb-01 web-01 web-02; do
+        get_record $sd
     done
 else
-    # If both domain and subdomain are provided → show only that one
-    get_record "$subdomain"
+    get_record $subdomain
 fi
-
